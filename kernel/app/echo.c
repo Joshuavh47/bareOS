@@ -12,7 +12,6 @@
  * followed immediately by another \n).
  */
 byte builtin_echo(char* arg) {
-  sleep(current_thread,500);
   char last='\0';
   char curr='\0';
   char buff[2048];

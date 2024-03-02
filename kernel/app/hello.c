@@ -11,7 +11,6 @@
  * If no text exists, print and error and return 1 instead.
  */
 byte builtin_hello(char* arg) {
-  sleep(current_thread,1000);
   char txt[2048];
   int ptr=0;
   //int x=0;

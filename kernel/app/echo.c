@@ -1,5 +1,8 @@
 #include <bareio.h>
 #include <barelib.h>
+#include <queue.h>
+#include <sleep.h>
+#include <thread.h>
 
 
 /*
@@ -9,6 +12,7 @@
  * followed immediately by another \n).
  */
 byte builtin_echo(char* arg) {
+  sleep(current_thread,500);
   char last='\0';
   char curr='\0';
   char buff[2048];

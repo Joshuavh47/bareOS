@@ -1,5 +1,8 @@
 #include <bareio.h>
 #include <barelib.h>
+#include <queue.h>
+#include <sleep.h>
+#include <thread.h>
 
 
 /*
@@ -8,7 +11,7 @@
  * If no text exists, print and error and return 1 instead.
  */
 byte builtin_hello(char* arg) {
-  
+  sleep(current_thread,1000);
   char txt[2048];
   int ptr=0;
   //int x=0;

@@ -16,10 +16,17 @@ typedef struct _queue {
 
 extern queue_t thread_queue[];
 extern uint32 ready_list;
+
 extern queue_t sleep_queue[];
+extern uint32 sleep_list;
 
 /*  thread related prototypes  */
 void thread_enqueue(uint32, uint32);
 uint32 thread_dequeue(uint32);
+uint32 specific_dequeue(uint32, uint32);
+int isInQueue(queue_t[], uint32, uint32);
+void sleep_enqueue(uint32, uint32, uint32);
+uint32 sleep_dequeue(uint32);
+uint32 sleep_specific_dequeue(uint32, uint32);
 
 #endif

@@ -19,7 +19,7 @@ int32 resched(void) {
     return 0;
   }
   
-  if(thread_table[old_thread].state==TH_RUNNING){
+  if(thread_table[old_thread].state==TH_RUNNING || thread_table[old_thread].state==TH_READY){
     thread_table[old_thread].state=TH_READY;
     thread_enqueue(NTHREADS,old_thread);
   }

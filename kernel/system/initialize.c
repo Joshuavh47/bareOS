@@ -40,6 +40,10 @@ void initialize(void) {
   }
   thread_queue[NTHREADS].qprev=NTHREADS;
   thread_queue[NTHREADS].qnext=NTHREADS;
+
+  thread_queue[sleep_list].qnext = sleep_list;
+  thread_queue[sleep_list].qprev = sleep_list;
+  thread_queue[sleep_list].key = 0;
   
 
   int32 thread=create_thread((shell),"",0);

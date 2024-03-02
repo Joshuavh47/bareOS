@@ -7,8 +7,11 @@
  *  of each element, starting at the "root" should always eventually lead back to the "root".
  *  The same should be true in reverse using 'qprev'.                                          */
 
-queue_t thread_queue[NTHREADS+1];   /*  Array of queue elements, one per thread plus one for the read_queue root  */
+queue_t thread_queue[NTHREADS+2];   /*  Array of queue elements, one per thread plus one for the read_queue root  */
 uint32 ready_list = NTHREADS + 0;   /*  Index of the read_list root  */
+
+queue_t sleep_queue[NTHREADS+1];
+uint32 sleep_list = NTHREADS + 1;
 
 
 /*  'thread_enqueue' takes an index into the thread_queue  associated with a queue "root"  *
@@ -68,79 +71,126 @@ uint32 thread_dequeue(uint32 queue) {
 }
 
 uint32 specific_dequeue(uint32 queue, uint32 threadid){
-  uint32 temp_queue = thread_queue[queue];
+  queue_t temp_queue = thread_queue[queue];
   int passed_root = 0;
-  while(temp_queue.qnext!=threadid){
+  while(thread_queue[temp_queue.qprev].qnext!=threadid){
     if(thread_queue[temp_queue.qprev].qnext == queue){
       passed_root++;
     }
-    
+    if(thread_queue[temp_queue.qprev].qnext == threadid){
+      break;
+    }
     temp_queue = thread_queue[temp_queue.qnext];
     if(thread_queue[temp_queue.qprev].qnext == queue && passed_root > 0){
-      return -1;
+      return NTHREADS;
     }
+    
   }
-  uint32 ret_queue = temp_queue.qnext;
-  temp_queue = thread_queue[temp_queue.qnext];
+  uint32 ret_queue = thread_queue[temp_queue.qprev].qnext;
   thread_queue[temp_queue.qprev].qnext = temp_queue.qnext;
   thread_queue[temp_queue.qnext].qprev = temp_queue.qprev;
   return ret_queue;
 }
 
-int isInQueue(queue_t[] arr, uint32 queue, uint32 threadid) {
-  uint32 temp_queue = arr[queue];
+int isInQueue(queue_t arr[], uint32 queue, uint32 threadid) {
+  queue_t temp_queue = arr[queue];
   int passed_root = 0;
-  while(temp_queue.qnext!=threadid){
-    if(arr[temp_queue.qprev].qnext == queue){
-      passed_root++;
-    }
-    
-    temp_queue = arr[temp_queue.qnext];
+  while(arr[temp_queue.qprev].qnext!=threadid){
     if(arr[temp_queue.qprev].qnext == queue && passed_root > 0){
       return 0;
     }
+    if(arr[temp_queue.qprev].qnext == queue){
+      passed_root++;
+    }
+    if(arr[temp_queue.qprev].qnext == threadid){
+      break;
+    }
+    temp_queue = arr[temp_queue.qnext];
+    
   }
   return 1;
 }
 
 void sleep_enqueue(uint32 queue, uint32 threadid, uint32 delay) {
   int passed_root = 0;
-  queue_t temp_queue = sleep_queue[queue];
+  queue_t temp_queue = thread_queue[queue];
   
-  uint32 index=temp_queue.qprev;
+  uint32 index=queue;
   int total = 0;
-  while(sleep_queue[temp_queue.qprev].qnext!=queue&&passed_root>0){
-    total+=sleep_queue[temp_queue.qnext].key;
-    if(temp_queue.qnext!=queue&&delay<total){
-      index=sleep_queue[temp_queue.qprev].qnext;
+  int prev = 0;
+  for(int i=0;i<NTHREADS;i++){
+    total+=temp_queue.key;
+    if(thread_queue[temp_queue.qprev].qnext == queue && passed_root > 0){
+      return;
     }
-    if(sleep_queue[temp_queue.qprev].qnext==queue){
+    if(delay>total&&(delay<total+thread_queue[temp_queue.qnext].key||temp_queue.qnext == queue)){
+      index=thread_queue[temp_queue.qprev].qnext;
+      break;
+    }
+    
+    if(thread_queue[temp_queue.qprev].qnext==queue){
       passed_root++;
     }
     if(temp_queue.qnext==threadid){
       return;
     }
     
-    temp_queue=sleep_queue[temp_queue.qnext];
+    temp_queue=thread_queue[temp_queue.qnext];
+  }
+  
+
+  thread_queue[threadid].qnext=thread_queue[index].qnext;
+  thread_queue[threadid].qprev=index;
+  thread_queue[thread_queue[threadid].qnext].qprev=threadid;
+  thread_queue[index].qnext=threadid;
+  temp_queue = thread_queue[queue];
+  while(thread_queue[temp_queue.qprev].qnext != threadid){
+    prev+=temp_queue.key;
+    temp_queue = thread_queue[temp_queue.qnext];
   }
 
-  sleep_queue[threadid].qnext=sleep_queue[index].qnext;
-  sleep_queue[threadid].qprev=index;
-  sleep_queue[thread_queue[index].qnext].qprev=threadid;
-  sleep_queue[index].qnext=threadid;
-  temp_queue.key = 
+  thread_queue[threadid].key = delay-prev;
+  
+  if(thread_queue[threadid].qnext != queue){
+    thread_queue[thread_queue[threadid].qnext].key = thread_queue[thread_queue[threadid].qnext].key - (delay-prev);
+  }
+  
 
 }
 
 uint32 sleep_dequeue(uint32 queue) {
-  if(sleep_queue[queue].qnext!=queue){
-    uint32 ret_thread = sleep_queue[queue].qnext;
+  if(thread_queue[queue].qnext!=queue){
+    uint32 ret_thread = thread_queue[queue].qnext;
     //queue_t temp_queue = thread_queue[thread_queue[queue].qnext];
-    sleep_queue[queue].qnext = sleep_queue[sleep_queue[queue].qnext].qnext;
-    sleep_queue[sleep_queue[queue].qnext].qprev = queue;
-    sleep_queue[ret_thread].qnext=0;
-    sleep_queue[ret_thread].qprev=0;
+    thread_queue[queue].qnext = thread_queue[thread_queue[queue].qnext].qnext;
+    thread_queue[thread_queue[queue].qnext].qprev = queue;
+    
     return ret_thread;
   }
   return queue;
+}
+
+uint32 sleep_specific_dequeue(uint32 queue, uint32 threadid){
+  queue_t temp_queue = thread_queue[queue];
+  int passed_root = 0;
+  while(temp_queue.qnext!=threadid){
+    if(thread_queue[temp_queue.qprev].qnext == queue){
+      passed_root++;
+    }
+    if(thread_queue[temp_queue.qprev].qnext == threadid){
+      break;
+    }
+    temp_queue = thread_queue[temp_queue.qnext];
+    if(thread_queue[temp_queue.qprev].qnext == queue && passed_root > 0){
+      return NTHREADS;
+    }
+    
+  }
+  uint32 ret_queue = thread_queue[temp_queue.qprev].qnext;
+  uint32 ret = thread_queue[ret_queue].qnext;
+  temp_queue = thread_queue[ret_queue];
+  thread_queue[ret_queue].qnext = thread_queue[ret].qnext;
+  thread_queue[thread_queue[ret].qnext].qprev = ret_queue;
+  thread_queue[thread_queue[ret].qnext].key += thread_queue[ret].key;
+  return ret;
 }

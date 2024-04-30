@@ -1,5 +1,5 @@
-#GPORT=$(shell python3 -c "import random; print(random.Random(\"$$USER\").randint(5570, 7000));")
-GPORT= 6969                 # Generate a random port based on the current username, uncomment this line to switch to static port
+GPORT=$(shell python3 -c "import random; print(random.Random(\"$$USER\").randint(5570, 7000));")
+#GPORT=                  # Generate a random port based on the current username, uncomment this line to switch to static port
 IMG=bareOS.img
 ARCH=riscv64-unknown-linux-gnu
 CC=$(ARCH)-gcc
@@ -30,7 +30,7 @@ DFLAGS= -ex "file $(IMG)" -ex "target remote :$(GPORT)"
 EFLAGS= -E -march=rv64imac -mabi=lp64
 LDFLAGS=-nostdlib -Map $(MAP)
 QFLAGS=-M virt -kernel $(IMG) -bios none -chardev stdio,id=uart0,logfile=.log -serial chardev:uart0 -display none
-INJ_FN=shell handle_clk ctxload disable_interrupts restore_interrupts initialize resched create_thread resume_thread join_thread uart_putc uart_getc builtin_hello builtin_echo
+INJ_FN=shell handle_clk uart_handler ctxload disable_interrupts restore_interrupts initialize resched create_thread resume_thread join_thread uart_putc uart_getc builtin_hello builtin_echo tty_init sem_wait sem_post
 
 STAGE=.setup
 

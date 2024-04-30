@@ -10,6 +10,7 @@
 #define TH_SUSPEND 3   /*                                                 */
 #define TH_DEFUNCT 4   /*                                                 */
 #define TH_SLEEP   5
+#define TH_WAITING 6
 
 #define THREAD_STACK_SZ ((mem_end - mem_start) / 2) / NTHREADS  /*  Macro calculates the size of a thread stack  */
 #define get_stack(n) mem_end - (n * THREAD_STACK_SZ)            /*  Macro gets start of stack by thread index    */
@@ -23,6 +24,7 @@ typedef struct _thread {
   uint32 parent;         /*  The index into the 'thread_table' of the thread's parent                */
   byte retval;           /*  The return value of the function (only valid when state == TH_DEFUNCT)  */
   uint32 priority;       /*  Thread priority (0=highest MAX_UINT32=lowest)                           */
+  uint32 semaphore;
 } thread_t;
 
 extern thread_t thread_table[];

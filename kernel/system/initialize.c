@@ -4,7 +4,10 @@
 #include <shell.h>
 #include <thread.h>
 #include <queue.h>
-
+#include <malloc.h>
+#include <semaphore.h>
+#include <tty.h>
+#include <fs.h>
 
 /*
  *  This file contains the C code entry point executed by the kernel.
@@ -22,6 +25,7 @@ void ctxload(uint64**);
 
 uint32 boot_complete = 0;
 
+
 void initialize(void) {
   
   char mask;
@@ -30,6 +34,8 @@ void initialize(void) {
   restore_interrupts(mask);
   boot_complete = 1;
   
+  heap_init();
+
   printf("Kernel start: %x\n",text_start);
   printf("--Kernel size: %d\n",data_start-text_start);
   printf("Globals start: %x\n",data_start);
@@ -43,8 +49,26 @@ void initialize(void) {
 
   thread_queue[sleep_list].qnext = sleep_list;
   thread_queue[sleep_list].qprev = sleep_list;
+  thread_queue[sem_list].qnext = sem_list;
+  thread_queue[sem_list].qprev = sem_list;
   thread_queue[sleep_list].key = 0;
   
+  for(int i = 0;i<NSEM;i++){
+    sem_table[i].state = S_FREE;
+    sem_table[i].qnext = sem_list;
+    sem_table[i].qprev = sem_list;
+  }
+  
+  for(int i=0;i<NTHREADS;i++){
+
+    thread_table[i].semaphore= sem_create(0);
+  }
+  tty_init();
+
+  bs_mk_ramdisk(NULL, NULL);
+  fs_mkfs();
+  fs_mount();
+
 
   int32 thread=create_thread((shell),"",0);
   current_thread=thread;
@@ -53,10 +77,10 @@ void initialize(void) {
   thread_table[thread].state=TH_RUNNING;
   
   
-  printf("Test\n");
+  
   ctxload(&thread_table[0].stackptr);
   
-  printf("Test2\n");
+  
   //int32 test=resume_thread(thread);
   //printf("%d",test);
   

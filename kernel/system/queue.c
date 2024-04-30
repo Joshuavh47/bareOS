@@ -1,5 +1,6 @@
 #include <queue.h>
 #include <thread.h>
+#include <semaphore.h>
 
 /*  Queues in bareOS are all contained in the 'thread_queue' array.  Each queue has a "root"
  *  that contains the index of the first and last elements in that respective queue.  These
@@ -7,12 +8,13 @@
  *  of each element, starting at the "root" should always eventually lead back to the "root".
  *  The same should be true in reverse using 'qprev'.                                          */
 
-queue_t thread_queue[NTHREADS+2];   /*  Array of queue elements, one per thread plus one for the read_queue root  */
+queue_t thread_queue[NTHREADS+3];   /*  Array of queue elements, one per thread plus one for the read_queue root  */
 uint32 ready_list = NTHREADS + 0;   /*  Index of the read_list root  */
 
 queue_t sleep_queue[NTHREADS+1];
 uint32 sleep_list = NTHREADS + 1;
 
+uint32 sem_list = NTHREADS + 2;
 
 /*  'thread_enqueue' takes an index into the thread_queue  associated with a queue "root"  *
  *  and a threadid of a thread to add to the queue.  The thread will be added to the tail  *
@@ -193,4 +195,59 @@ uint32 sleep_specific_dequeue(uint32 queue, uint32 threadid){
   thread_queue[thread_queue[ret].qnext].qprev = ret_queue;
   thread_queue[thread_queue[ret].qnext].key += thread_queue[ret].key;
   return ret;
+}
+
+uint32 sem_is_in_queue(uint32 sid, uint32 threadid){
+  uint32 temp = sem_table[sid].qnext;
+  if(temp == threadid){
+    return 1;
+  }
+  while(thread_queue[temp].qnext != sem_list){
+    if(temp == threadid){
+      return 1;
+    }
+    temp = thread_queue[temp].qnext;
+  }
+  if(temp == threadid){
+    return 1;
+  }
+  else{
+    return 0;
+  }
+}
+
+void sem_enqueue(uint32 sid, uint32 threadid){
+  if(sem_table[sid].qnext == sem_list){
+    sem_table[sid].qnext = threadid;
+    sem_table[sid].qprev = threadid;
+    thread_queue[threadid].qnext = sem_list;
+    thread_queue[threadid].qprev = sem_list;
+    return;
+  }
+  uint32 temp = sem_table[sid].qnext;
+  while(thread_queue[temp].qnext != sem_list){
+    temp = thread_queue[temp].qnext;
+  }
+  thread_queue[temp].qnext = threadid;
+  thread_queue[threadid].qprev = temp;
+  sem_table[sid].qprev = threadid;
+}
+
+uint32 sem_dequeue(uint32 sid){
+  if(sem_table[sid].qnext == sem_list){
+    return sem_list;
+  }
+  uint32 temp = sem_table[sid].qnext;
+  if(thread_queue[temp].qnext == sem_list){
+    uint32 ret_sem = sem_table[sid].qnext;
+    sem_table[sid].qnext = sem_list;
+    sem_table[sid].qprev = sem_list;
+    return ret_sem;
+  }
+  uint32 ret_sem = sem_table[sid].qnext;
+  sem_table[sid].qnext = thread_queue[ret_sem].qnext;
+  thread_queue[sem_table[sid].qnext].qprev = sem_list;
+  thread_queue[ret_sem].qnext = sem_list;
+  thread_queue[ret_sem].qprev = sem_list;
+  return ret_sem;
 }

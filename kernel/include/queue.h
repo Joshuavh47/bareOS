@@ -20,6 +20,8 @@ extern uint32 ready_list;
 extern queue_t sleep_queue[];
 extern uint32 sleep_list;
 
+extern uint32 sem_list;
+
 /*  thread related prototypes  */
 void thread_enqueue(uint32, uint32);
 uint32 thread_dequeue(uint32);
@@ -28,5 +30,8 @@ int isInQueue(queue_t[], uint32, uint32);
 void sleep_enqueue(uint32, uint32, uint32);
 uint32 sleep_dequeue(uint32);
 uint32 sleep_specific_dequeue(uint32, uint32);
+uint32 sem_dequeue(uint32);
+void sem_enqueue(uint32, uint32);
+uint32 sem_is_in_queue(uint32, uint32);
 
 #endif

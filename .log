@@ -1,11 +1,10 @@
 Kernel start: 0x80000000
---Kernel size: 3072
-Globals start: 0x80003000
-Heap/Stack start: 0x8000cd38
---Free Memory Available: 33541297
-Test
-bareOS$ hello asdf
-Hello, asdf!
-bareOS$ cd ..
+--Kernel size: 6144
+Globals start: 0x80006000
+Heap/Stack start: 0x80010b40
+--Free Memory Available: 33537327
+bareOS$ asdasd
 Unknown command
+bareOS$ 
+bareOS$ 
 bareOS$ 
